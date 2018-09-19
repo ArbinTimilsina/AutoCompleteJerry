@@ -1,5 +1,5 @@
 # Goal
-Design and implement  an auto-complete server using scripts from all the episodes of Seinfield. The server will try to predict how Jerry Seinfield would finish a given uncomplete sentence.
+Design and implement  an auto-complete server using scripts from all the episodes of Seinfeld. The server will try to predict how Jerry Seinfeld would finish a given incomplete sentence.
 
 #### Dataset obtained from https://www.kaggle.com/thec03u5/seinfeld-chronicles
 
