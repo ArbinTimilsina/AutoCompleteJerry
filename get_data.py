@@ -1,7 +1,7 @@
 from keras.utils import to_categorical
 
 import numpy as np
-import json
+import csv
 
 class GetData:
     def __init__(self, sequence_max_len, chars_mapping):
@@ -11,7 +11,7 @@ class GetData:
     def get_corpus(self, file_path):
         # We will just use dialogue by Jerry
         dialogues_by_jerry = []
-        with open('input_files/complete_ seinfeld_scripts.csv') as input_file:
+        with open(file_path) as input_file:
             input_data = csv.DictReader(input_file)
             for row in input_data:
                 if(row['Character'] == 'JERRY'):
