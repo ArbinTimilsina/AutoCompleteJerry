@@ -29,11 +29,11 @@ class LanguageModel:
         return model
 
     def train_model(self, model, X, y, epochs=5, batch_size=128, filepath='saved_models/model_weights.hdf5'):
-        # Stop training when a monitored quantity has stopped improving after 9 epochs
-        early_stop = EarlyStopping(patience=9, verbose=1)
+        # Stop training when a monitored quantity has stopped improving after 20 epochs
+        early_stop = EarlyStopping(patience=20, verbose=1)
 
         # Reduce learning rate when a metric has stopped improving
-        reduce_lr = ReduceLROnPlateau(factor=0.3, patience=3, cooldown=3, verbose=1)
+        reduce_lr = ReduceLROnPlateau(factor=0.3, patience=5, cooldown=5, verbose=1)
 
         # Save the best model after every epoch
         check_point = ModelCheckpoint(filepath=filepath, verbose=1, save_best_only=True)

@@ -13,7 +13,7 @@ def get_character_mapping():
 
 def main():
     sequence_max_len = 40
-    epochs = 50
+    epochs = 200
     input_file_path = 'input_files/complete_ seinfeld_scripts.csv'
 
     chars, chars_mapping = get_character_mapping()
