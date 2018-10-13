@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from keras.utils import to_categorical
 
 import numpy as np
@@ -27,7 +28,9 @@ class GetData:
         # target_character will be the character just after the prefix_sequences 
         prefix_sequences = []
         target_character = []
-        for i in range (0, len(text) - self.sequence_max_len):
+
+        print("Making prefix sequences and target character.")
+        for i in tqdm(range(0, len(text) - self.sequence_max_len)):
             prefix_sequences.append(text[i: i + self.sequence_max_len])
             target_character.append(text[i + self.sequence_max_len])
 
