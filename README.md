@@ -23,9 +23,9 @@ python train_model.py -s 7 -e 1
 ```
 python run_server.py
 ```
-and then curl the following in a new terminal (or paste into a web browser)
+and then curl the following (or such) in a new terminal (or paste into a web browser)
 ```
-http://localhost:5050/autocomplete?seed=What+is+deal
+http://localhost:5050/autocomplete?seed=What+is+the+deal
 ```
 
 You will get output similar to 

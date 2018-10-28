@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from keras.models import Sequential
-from keras.layers import Embedding, LSTM, Dense, Dropout
+from keras.layers import Embedding, GRU, Dense, Dropout
 from keras.preprocessing.sequence import pad_sequences
 from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
@@ -65,11 +65,11 @@ class LanguageModel:
         self.embedding_matrix = embedding_matrix
 
 
-    def build_model(self, dropout=0.25, recurrent_dropout=0.25, activation='softmax'):
+    def build_model(self, dropout=0.05, recurrent_dropout=0.05, activation='softmax'):
         model = Sequential()
         model.add(Embedding(self.vocabulary_size, self.embedding_dim, input_length=self.sequence_max_len))
-        model.add(LSTM(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout, return_sequences=True))
-        model.add(LSTM(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout))
+        model.add(GRU(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout, return_sequences=True))
+        model.add(GRU(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout))
         model.add(Dense(self.embedding_dim, activation='relu'))
         model.add(Dropout(dropout))
 
@@ -78,21 +78,21 @@ class LanguageModel:
         model.layers[0].set_weights([self.embedding_matrix])
         model.layers[0].trainable = False
 
-        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=1E-3))
+        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.1))
 
         return model
 
     def train_model(self, model, X, y, epochs, batch_size, file_path):
         # Reduce learning rate when a metric has stopped improving
-        reduce_lr = ReduceLROnPlateau(factor=0.3, patience=3, cooldown=3, verbose=1)
+        reduce_lr = ReduceLROnPlateau(factor=0.2, patience=5, cooldown=3, verbose=1)
 
         # Save the best model after every epoch
-        check_point = ModelCheckpoint(filepath=file_path, verbose=1, save_best_only=False)
+        check_point = ModelCheckpoint(filepath=file_path, verbose=1, save_best_only=True)
 
         # Split data into train and validation set (85/15)
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
 
-        history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=0,
+        history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1,
                             validation_data=(X_val, y_val),
                             callbacks=[check_point, reduce_lr])
 
