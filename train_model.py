@@ -8,7 +8,7 @@ from tools.language_model_tools import LanguageModel
 
 def argument_parser():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-l", "--sequence_lenght", required=True,
+    ap.add_argument("-s", "--sequence_lenght", required=True,
 	   help="Choose the sequence lenght.'")
     ap.add_argument("-e", "--epoch", required=True,
 	   help="Choose the number of epoch.")

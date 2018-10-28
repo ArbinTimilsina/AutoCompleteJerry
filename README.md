@@ -16,7 +16,7 @@ cd AutoCompleteJerry
 python train_model.py --help
 
 # Example
-python train_model.py -l 7 -e 1
+python train_model.py -s 7 -e 1
 ``` 
 
 ### To use the model, do
