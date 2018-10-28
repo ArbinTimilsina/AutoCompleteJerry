@@ -3,34 +3,20 @@ Design and implement  an auto-complete server using scripts from all the episode
 
 #### Dataset obtained from https://www.kaggle.com/thec03u5/seinfeld-chronicles
 
-## To run the code on a computer (with CPU)
+## Instructions
 
 ### Git clone the code
 ```
 git clone https://github.com/ArbinTimilsina/AutoCompleteJerry.git
-cd AutoComplete
-```
-
-### Create a conda environment (Python 3)
-```
-conda update -n base conda
-conda env create -f requirements/cpu_requirements.yml
-conda activate envAutoComplete
-```
-
-### Switch Keras backend to TensorFlow
-```
-KERAS_BACKEND=tensorflow python -c "from keras import backend"
-```
-
-### Create an IPython kernel for the environment
-```
-python -m ipykernel install --user --name envAutoCompleteJerry --display-name "envAutoCompleteJerry"
+cd AutoCompleteJerry
 ```
 
 ### To train the model, do
 ```
-python train_model.py
+python train_model.py --help
+
+# Example
+python train_model.py -l 7 -e 1
 ``` 
 
 ### To use the model, do
@@ -48,8 +34,36 @@ You will get output similar to
 
 Replace the string after ```?seed=``` to change the seed and see suggested completions!
 
-###  To experiment and play with a copy of the inner workings, do
+
+## Additional information
+
+### To create a conda environment (Python 3)
 ```
-jupyter notebook model_creation_playground.ipynb
+conda create --name envAutoCompleteJerry python=3.5
+conda activate envAutoCompleteJerry
+pip install --upgrade pip
+pip install -r requirements/cpu_requirements.txt
 ```
-Make sure to change the kernel to envAutoComplete using the drop-down menu (Kernel > Change kernel > envAutoCompleteJerry)
+
+### Download the GloVe word embeddings
+Head to https://nlp.stanford.edu/projects/glove/ and download the pre-computed embeddings from 2014 English Wikipedia. Un-zip it.
+
+### To switch Keras backend to TensorFlow
+```
+KERAS_BACKEND=tensorflow python -c "from keras import backend"
+```
+
+### To open jupyter notebook
+
+```
+# Create an IPython kernel for the environment
+python -m ipykernel install --user --name envAutoCompleteJerry --display-name "envAutoCompleteJerry"
+```
+
+```
+# Open the notebook
+jupyter notebook miscellaneous/model_creation_playground.ipynb
+
+# Make sure to change the kernel to envAutoComplete using the drop-down menu (Kernel > Change kernel > envAutoCompleteJerry)
+```
+

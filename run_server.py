@@ -1,38 +1,46 @@
-from language_model import LanguageModel
-from flask import Flask, request, jsonify
+import argparse
+from os import path
 from pickle import load
+import tensorflow as tf
+import json
+from flask import Flask, request, jsonify
+from keras.models import load_model
+from tools.language_model_tools import make_prediction
 
 app = Flask(__name__)
 
 def get_model():
     # Load max_len, chars, mapping
     for_server = load(open('saved_models/for_server.pkl', 'rb'))
-    sequence_max_len, chars, chars_mapping = for_server[0], for_server[1], for_server[2]
+    tokenizer, word_index, max_len, eos = for_server[0], for_server[1], for_server[2], for_server[3]
 
-    language_model = LanguageModel(sequence_max_len, chars, chars_mapping)
-    model = language_model.load_model()
+    # Get the model
+    model_path = path.join("saved_models", "model_and_weights.hdf5")
+    model = load_model(model_path)
 
-    return language_model, model
+    # Needed for Tensor is not an element of this graph error
+    graph = tf.get_default_graph()
+    return model, graph, tokenizer, word_index, max_len, eos
 
 # Get the model information once
-language_model, model = get_model() 
+model, graph, tokenizer, word_index, max_len, eos = get_model()
 
 @app.route("/autocomplete")
 def make_completions():
     try:
         seed_text = request.args.get("seed")
-        suggestions = auto_complete(seed_text, language_model, model)
-        return jsonify({"Seed": seed_text, "Suggested completions": [x.strip() for x in suggestions]})
+        with graph.as_default():
+            suggestions = auto_complete(seed_text)
+            return json.dumps({"Seed": seed_text, "Suggested completions": [x.strip() for x in suggestions]}, indent=2)
     except Exception as e:
         print(e)
 
-def auto_complete(seed_text, language_model, model):
+def auto_complete(seed_text):
     auto_completion = []
     # Higher temperature results in sampling distribution that will generate more surprising result
     temperatures = [0.1, 0.5, 1.0]
     for temp in temperatures:
-        auto_completion.append("".join(language_model.make_prediction(model, seed_text, temp)))
-    
+        auto_completion.append("".join(make_prediction(model, seed_text, temp, tokenizer, word_index, max_len, eos)))
     return auto_completion
 
 def main(host="localhost", port=5050):
@@ -40,4 +48,3 @@ def main(host="localhost", port=5050):
 
 if __name__ == "__main__":
     main()
-
