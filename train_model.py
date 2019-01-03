@@ -59,8 +59,12 @@ def main():
     data = GetData(SEQUENCE_MAX_LEN, EOS)
     X, y, tokenizer, word_index, vocabulary_size = data.get_data(input_file_path)
 
+    # Save word_index
+    for_serve = [tokenizer, word_index, SEQUENCE_MAX_LEN, EOS]
+    dump(for_serve, open('saved_models/for_server.pkl', 'wb'))
+
     # Options are 50, 100, 200, 300
-    embedding_dim = 200
+    embedding_dim = 50
     embedding_matrix = get_embedding_matrix(embedding_dim, word_index, vocabulary_size)
 
     # Train the model
@@ -84,10 +88,6 @@ def main():
 
     # Needed for 'object has no attribute 'TF_DeleteStatus'' error
     K.clear_session()
-
-    # Save word_index
-    for_serve = [tokenizer, word_index, SEQUENCE_MAX_LEN, EOS]
-    dump(for_serve, open('saved_models/for_server.pkl', 'wb'))
 
 if __name__ == "__main__":
     main()

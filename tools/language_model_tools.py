@@ -2,9 +2,9 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD, RMSprop
 from keras.models import Sequential
-from keras.layers import Embedding, GRU, Dense, Dropout
+from keras.layers import Embedding, LSTM, Dense, Dropout
 from keras.preprocessing.sequence import pad_sequences
 from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
@@ -65,11 +65,10 @@ class LanguageModel:
         self.embedding_matrix = embedding_matrix
 
 
-    def build_model(self, dropout=0.05, recurrent_dropout=0.05, activation='softmax'):
+    def build_model(self, dropout=0.1, recurrent_dropout=0.1):
         model = Sequential()
         model.add(Embedding(self.vocabulary_size, self.embedding_dim, input_length=self.sequence_max_len))
-        model.add(GRU(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout, return_sequences=True))
-        model.add(GRU(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout))
+        model.add(LSTM(self.embedding_dim, dropout=dropout, recurrent_dropout=recurrent_dropout))
         model.add(Dense(self.embedding_dim, activation='relu'))
         model.add(Dropout(dropout))
 
@@ -78,7 +77,7 @@ class LanguageModel:
         model.layers[0].set_weights([self.embedding_matrix])
         model.layers[0].trainable = False
 
-        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.1))
+        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-5, decay=1e-4, momentum=0.9, nesterov=True))
 
         return model
 
