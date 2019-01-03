@@ -77,7 +77,8 @@ class LanguageModel:
         model.layers[0].set_weights([self.embedding_matrix])
         model.layers[0].trainable = False
 
-        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-3, decay=1e-4, momentum=0.9, nesterov=True))
+        #model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-3, decay=1e-4, momentum=0.9, nesterov=True))
+        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-2, decay=1e-4, momentum=0.9, nesterov=True))
 
         return model
 
