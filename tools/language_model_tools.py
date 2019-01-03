@@ -8,7 +8,7 @@ from keras.layers import Embedding, LSTM, Dense, Dropout
 from keras.preprocessing.sequence import pad_sequences
 from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
 from sklearn.model_selection import train_test_split
 
 def sample_predictions(predictions, temperature):
@@ -77,13 +77,16 @@ class LanguageModel:
         model.layers[0].set_weights([self.embedding_matrix])
         model.layers[0].trainable = False
 
-        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-5, decay=1e-4, momentum=0.9, nesterov=True))
+        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-3, decay=1e-4, momentum=0.9, nesterov=True))
 
         return model
 
     def train_model(self, model, X, y, epochs, batch_size, file_path):
+        # Stop training when a monitored quantity has stopped improving after certain epochs
+        early_stop = EarlyStopping(patience=15, verbose=1)
+            
         # Reduce learning rate when a metric has stopped improving
-        reduce_lr = ReduceLROnPlateau(factor=0.2, patience=5, cooldown=3, verbose=1)
+        reduce_lr = ReduceLROnPlateau(factor=0.2, patience=3, cooldown=3, verbose=1)
 
         # Save the best model after every epoch
         check_point = ModelCheckpoint(filepath=file_path, verbose=1, save_best_only=True)
@@ -93,7 +96,7 @@ class LanguageModel:
 
         history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1,
                             validation_data=(X_val, y_val),
-                            callbacks=[check_point, reduce_lr])
+                            callbacks=[check_point, early_stop, reduce_lr])
 
         return history
 
