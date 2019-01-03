@@ -14,6 +14,10 @@ def get_model():
     for_server = load(open('saved_models/for_server.pkl', 'rb'))
     tokenizer, word_index, max_len, eos = for_server[0], for_server[1], for_server[2], for_server[3]
 
+    # Following is needed if trained in a different environment
+    # See: https://github.com/keras-team/keras/issues/9099
+    tokenizer.oov_token = None
+           
     # Get the model
     model_path = path.join("saved_models", "model_and_weights.hdf5")
     model = load_model(model_path)
