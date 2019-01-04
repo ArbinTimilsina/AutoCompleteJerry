@@ -42,7 +42,7 @@ def make_completions():
 def auto_complete(seed_text):
     auto_completion = []
     # Higher temperature results in sampling distribution that will generate more surprising result
-    temperatures = [0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0]
+    temperatures = [0.8, 1.0, 1.2]
     for temp in temperatures:
         auto_completion.append("".join(make_prediction(model, seed_text, temp, tokenizer, word_index, max_len, eos)))
     return auto_completion
