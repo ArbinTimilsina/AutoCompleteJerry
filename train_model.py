@@ -1,15 +1,17 @@
+import os
 import argparse
-from os import path
-from keras import backend as K
-from pickle import dump
 import numpy as np
+from pickle import dump
+from keras import backend as K
+from keras.utils import plot_model
+from keras.optimizers import RMSprop
 from tools.data_tools import GetData
+from sklearn.model_selection import train_test_split
 from tools.language_model_tools import LanguageModel
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
 
 def argument_parser():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-s", "--sequence_lenght", required=True,
-	   help="Choose the sequence lenght.'")
     ap.add_argument("-e", "--epoch", required=True,
 	   help="Choose the number of epoch.")
     return vars(ap.parse_args())
@@ -17,7 +19,7 @@ def argument_parser():
 def get_embedding_matrix(embedding_dim, word_index, vocabulary_size):
     glove_dir = 'glove.6B'
     embeddings_index = {}
-    f = open(path.join(glove_dir, 'glove.6B.{}d.txt'.format(embedding_dim)))
+    f = open(os.path.join(glove_dir, 'glove.6B.{}d.txt'.format(embedding_dim)))
     for line in f:
         values = line.split()
         word = values[0]
@@ -37,14 +39,9 @@ def get_embedding_matrix(embedding_dim, word_index, vocabulary_size):
 
 
 def main():
-    args = argument_parser()
-    try:
-        SEQUENCE_MAX_LEN = int(args["sequence_lenght"])
-    except ValueError:
-        print("\nWarning: Sequence lenght should be an integer.")
-        SEQUENCE_MAX_LEN = 7
-        print("Setting it to {}.".format(SEQUENCE_MAX_LEN))
+    SEQUENCE_MAX_LEN = 3
 
+    args = argument_parser()
     try:
         NUM_NUM_EPOCHS = int(args["epoch"])
     except ValueError:
@@ -52,7 +49,7 @@ def main():
         print("Exiting!\n")
         sys.exit(1)
 
-    input_file_path = path.join("input_files", "complete_seinfeld_scripts.csv")
+    input_file_path = os.path.join("input_files", "complete_seinfeld_scripts.csv")
 
     #Get data
     EOS = "eos"
@@ -71,9 +68,9 @@ def main():
     language_model = LanguageModel(vocabulary_size, SEQUENCE_MAX_LEN, embedding_dim, embedding_matrix)
     model = language_model.build_model()
 
-    model_and_weights = path.join("saved_models", "model_and_weights.hdf5")
+    model_and_weights = os.path.join("saved_models", "model_and_weights.hdf5")
     # If weights exist, load them before training
-    if(path.isfile(model_and_weights)):
+    if(os.path.isfile(model_and_weights)):
         print("Old weights found!")
         try:
             model.load_weights(model_and_weights)
@@ -81,9 +78,33 @@ def main():
         except:
             print("Old weights couldn't be loaded successfully, will continue!")
 
-    history = language_model.train_model(model, X, y, epochs=NUM_NUM_EPOCHS, batch_size=128, file_path=model_and_weights)
+    learning_rate = 1e-4;
+    model.compile(optimizer=RMSprop(lr=learning_rate), loss='categorical_crossentropy')
 
-    loss_path = path.join("plots", "loss_vs_epoch.pdf")
+    # Print model summary
+    model.summary()
+
+    # Plot the model architecture
+    model_path = os.path.join("plots", "model.pdf")
+    plot_model(model, to_file=model_path, show_shapes=True)
+
+    # Stop training when a monitored quantity has stopped improving after certain epochs
+    early_stop = EarlyStopping(patience=15, verbose=1)
+
+    # Reduce learning rate when a metric has stopped improving
+    reduce_lr = ReduceLROnPlateau(factor=0.2, patience=3, cooldown=3, verbose=1)
+
+    # Save the best model after every epoch
+    check_point = ModelCheckpoint(filepath=model_and_weights, verbose=1, save_best_only=True)
+
+    # Split data into train and validation set (85/15)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
+
+    history = model.fit(X_train, y_train, batch_size=128, epochs=NUM_NUM_EPOCHS, verbose=1,
+                        validation_data=(X_val, y_val),
+                        callbacks=[check_point, early_stop, reduce_lr])
+
+    loss_path = os.path.join("plots", "loss_vs_epoch.pdf")
     language_model.plot_loss_history(history, loss_path)
 
     # Needed for 'object has no attribute 'TF_DeleteStatus'' error

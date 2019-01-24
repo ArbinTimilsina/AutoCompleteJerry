@@ -2,14 +2,13 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.optimizers import Adam, SGD, RMSprop
 from keras.models import Sequential
-from keras.layers import Embedding, LSTM, Dense, Dropout
-from keras.preprocessing.sequence import pad_sequences
 from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
-from sklearn.model_selection import train_test_split
+from keras.preprocessing.sequence import pad_sequences
+from keras.layers import Embedding, LSTM, Dense, Dropout
+
+from keras.regularizers import l2
 
 def sample_predictions(predictions, temperature):
     predictions = np.asarray(predictions).astype('float64')
@@ -56,7 +55,6 @@ def make_prediction(model, text, temperature, tokenizer, word_index, max_len, eo
 
     return text
 
-
 class LanguageModel:
     def __init__(self, vocabulary_size, sequence_max_len, embedding_dim, embedding_matrix):
         self.vocabulary_size = vocabulary_size
@@ -77,28 +75,7 @@ class LanguageModel:
         model.layers[0].set_weights([self.embedding_matrix])
         model.layers[0].trainable = False
 
-        model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1e-3, decay=1e-4, momentum=0.9, nesterov=True))
-
         return model
-
-    def train_model(self, model, X, y, epochs, batch_size, file_path):
-        # Stop training when a monitored quantity has stopped improving after certain epochs
-        early_stop = EarlyStopping(patience=15, verbose=1)
-            
-        # Reduce learning rate when a metric has stopped improving
-        reduce_lr = ReduceLROnPlateau(factor=0.2, patience=3, cooldown=3, verbose=1)
-
-        # Save the best model after every epoch
-        check_point = ModelCheckpoint(filepath=file_path, verbose=1, save_best_only=True)
-
-        # Split data into train and validation set (85/15)
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
-
-        history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1,
-                            validation_data=(X_val, y_val),
-                            callbacks=[check_point, early_stop, reduce_lr])
-
-        return history
 
     def plot_loss_history(self, history, file_path):
         # Summarize history for loss

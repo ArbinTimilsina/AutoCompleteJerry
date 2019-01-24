@@ -1,10 +1,10 @@
-import argparse
-from os import path
-from pickle import load
-import tensorflow as tf
+import os
 import json
-from flask import Flask, request, jsonify
+import argparse
+import tensorflow as tf
+from pickle import load
 from keras.models import load_model
+from flask import Flask, request, jsonify
 from tools.language_model_tools import make_prediction
 
 app = Flask(__name__)
@@ -17,9 +17,9 @@ def get_model():
     # Following is needed if trained in a different environment
     # See: https://github.com/keras-team/keras/issues/9099
     tokenizer.oov_token = None
-           
+
     # Get the model
-    model_path = path.join("saved_models", "model_and_weights.hdf5")
+    model_path = os.path.join("saved_models", "model_and_weights.hdf5")
     model = load_model(model_path)
 
     # Needed for Tensor is not an element of this graph error

@@ -1,9 +1,30 @@
+import csv
+import numpy as np
 from keras.utils import to_categorical
 from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
 
-import numpy as np
-import csv
+def remove_nonascii(word):
+    return ''.join([char if ord(char) < 128 else '' for char in word])
+
+def make_lower(word):
+    return word.lower()
+
+def remove_dots(word):
+    return word.replace("...", "")
+
+def replace_by_eos(word, eos):
+    word = word.replace(".", eos)
+    word = word.replace("?", eos)
+    word = word.replace("!", eos)
+    return word
+
+def clean_word(word, eos):
+    processed = remove_nonascii(word)
+    processed = make_lower(processed)
+    processed = remove_dots(processed)
+    processed = replace_by_eos(processed, eos)
+    return processed
 
 class GetData:
     def __init__(self, sequence_max_len, eos):
@@ -11,26 +32,18 @@ class GetData:
         self.eos = eos
 
     def get_data(self, input_file_path):
-        words_by_jerry = []
+        dialogue_by_jerry = []
         with open(input_file_path) as input_file:
             input_data = csv.DictReader(input_file)
             for row in input_data:
                 if(row['Character'] == 'JERRY'):
-                    for words in row['Dialogue'].split():
-                        for word in word_tokenize(words):
-                            word = word.replace("...", "")
-                            word = word.replace(".", self.eos)
-                            word = word.replace("?", self.eos)
-                            word = word.replace("!", self.eos)
-                            if word.isalpha():
-                                # Convert to lower letter
-                                words_by_jerry.append(word.lower())
+                    dialogue_by_jerry.append([clean_word(word, self.eos) for word in word_tokenize(row['Dialogue'])])
 
             # Create a tokenizer
             tokenizer = Tokenizer()
 
             # And build the word index
-            tokenizer.fit_on_texts(words_by_jerry)
+            tokenizer.fit_on_texts(dialogue_by_jerry)
 
             # This is how we can recover the word index that was computed
             word_index = tokenizer.word_index
@@ -38,25 +51,24 @@ class GetData:
             # Vocabulary size
             vocabulary_size = len(word_index) + 1
 
-            # This turns strings into lists of integer indices.
-            text_sequences = tokenizer.texts_to_sequences(words_by_jerry)
-
-            sequences = []
-            for sequence in text_sequences:
-                for seq in sequence:
-                    sequences.append(seq)
-
-            # Lists to hold the prefixes and targets
-            prefix_sequences = []
+            prefix_word = []
             target_word = []
-            for i in range (len(sequences) - self.sequence_max_len):
-                prefix_sequences.append(sequences[i: i + self.sequence_max_len])
-                target_word.append(sequences[i + self.sequence_max_len])
+            for dialogue in dialogue_by_jerry:
+                for i in range (len(dialogue) - self.sequence_max_len):
+                    prefix_word.append(dialogue[i: i + self.sequence_max_len])
+                    target_word.append(dialogue[i + self.sequence_max_len])
+
+            print(prefix_word)
+
+            # This turns strings into lists of integer indices.
+            prefix_sequences = tokenizer.texts_to_sequences(prefix_word)
+            target_sequences = tokenizer.texts_to_sequences(target_word)
 
             X = np.array(prefix_sequences)
+            y = np.array(target_sequences)
 
             # Normalize
             X = X / float(vocabulary_size)
-            y = to_categorical(target_word, num_classes=vocabulary_size)
+            y = to_categorical(y, num_classes=vocabulary_size)
 
             return X, y, tokenizer, word_index, vocabulary_size
