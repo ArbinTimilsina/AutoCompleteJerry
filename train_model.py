@@ -77,9 +77,9 @@ def main():
         except:
             print("Old weights couldn't be loaded successfully, will continue!")
 
-    learning_rate = 1e-3;
+    learning_rate = 1.0e-4;
     decaly_rate = learning_rate/NUM_EPOCHS
-    model.compile(optimizer=SGD(lr=learning_rate, decay=decaly_rate), loss='categorical_crossentropy')
+    model.compile(optimizer=SGD(lr=learning_rate, decay=decaly_rate, momentum=0.9), loss='categorical_crossentropy')
 
     # Print model summary
     model.summary()
@@ -100,7 +100,7 @@ def main():
     # Split data into train and validation set (85/15)
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
 
-    history = model.fit(X_train, y_train, batch_size=128, epochs=NUM_EPOCHS, verbose=1,
+    history = model.fit(X_train, y_train, batch_size=500, epochs=NUM_EPOCHS, verbose=1,
                         validation_data=(X_val, y_val),
                         callbacks=[check_point, early_stop, reduce_lr])
 
