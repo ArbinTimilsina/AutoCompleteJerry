@@ -4,8 +4,8 @@ import numpy as np
 from pickle import dump
 from keras import backend as K
 from keras.utils import plot_model
-from keras.optimizers import RMSprop
 from tools.data_tools import GetData
+from keras.optimizers import SGD, RMSprop
 from sklearn.model_selection import train_test_split
 from tools.language_model_tools import LanguageModel
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
@@ -39,11 +39,11 @@ def get_embedding_matrix(embedding_dim, word_index, vocabulary_size):
 
 
 def main():
-    SEQUENCE_MAX_LEN = 3
+    SEQUENCE_MAX_LEN = 4
 
     args = argument_parser()
     try:
-        NUM_NUM_EPOCHS = int(args["epoch"])
+        NUM_EPOCHS = int(args["epoch"])
     except ValueError:
         print("\nError: Epoch should be an integer.")
         print("Exiting!\n")
@@ -52,16 +52,15 @@ def main():
     input_file_path = os.path.join("input_files", "complete_seinfeld_scripts.csv")
 
     #Get data
-    EOS = "eos"
-    data = GetData(SEQUENCE_MAX_LEN, EOS)
+    data = GetData(SEQUENCE_MAX_LEN)
     X, y, tokenizer, word_index, vocabulary_size = data.get_data(input_file_path)
 
     # Save word_index
-    for_serve = [tokenizer, word_index, SEQUENCE_MAX_LEN, EOS]
+    for_serve = [tokenizer, word_index, SEQUENCE_MAX_LEN]
     dump(for_serve, open('saved_models/for_server.pkl', 'wb'))
 
     # Options are 50, 100, 200, 300
-    embedding_dim = 50
+    embedding_dim = 100
     embedding_matrix = get_embedding_matrix(embedding_dim, word_index, vocabulary_size)
 
     # Train the model
@@ -78,8 +77,9 @@ def main():
         except:
             print("Old weights couldn't be loaded successfully, will continue!")
 
-    learning_rate = 1e-4;
-    model.compile(optimizer=RMSprop(lr=learning_rate), loss='categorical_crossentropy')
+    learning_rate = 1e-3;
+    decaly_rate = learning_rate/NUM_EPOCHS
+    model.compile(optimizer=SGD(lr=learning_rate, decay=decaly_rate), loss='categorical_crossentropy')
 
     # Print model summary
     model.summary()
@@ -89,7 +89,7 @@ def main():
     plot_model(model, to_file=model_path, show_shapes=True)
 
     # Stop training when a monitored quantity has stopped improving after certain epochs
-    early_stop = EarlyStopping(patience=15, verbose=1)
+    early_stop = EarlyStopping(patience=10, verbose=1)
 
     # Reduce learning rate when a metric has stopped improving
     reduce_lr = ReduceLROnPlateau(factor=0.2, patience=3, cooldown=3, verbose=1)
@@ -100,7 +100,7 @@ def main():
     # Split data into train and validation set (85/15)
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15)
 
-    history = model.fit(X_train, y_train, batch_size=128, epochs=NUM_NUM_EPOCHS, verbose=1,
+    history = model.fit(X_train, y_train, batch_size=128, epochs=NUM_EPOCHS, verbose=1,
                         validation_data=(X_val, y_val),
                         callbacks=[check_point, early_stop, reduce_lr])
 

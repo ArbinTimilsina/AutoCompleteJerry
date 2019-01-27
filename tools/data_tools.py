@@ -1,8 +1,20 @@
 import csv
+import string
 import numpy as np
 from keras.utils import to_categorical
-from nltk.tokenize import word_tokenize
 from keras.preprocessing.text import Tokenizer
+from nltk.tokenize import word_tokenize, sent_tokenize
+
+# Don't filter . and ?
+filter='!"#$%&\'()*+,-/:;<=>@[\\]^_`{|}~0123456789'
+
+def remove_punctuations_digits(sentence):
+    return sentence.translate(str.maketrans('', '', filter))
+
+def remove_dots(sentence):
+    sentence = sentence.replace('..', ' ')
+    sentence = sentence.replace('...', ' ')
+    return sentence
 
 def remove_nonascii(word):
     return ''.join([char if ord(char) < 128 else '' for char in word])
@@ -10,40 +22,32 @@ def remove_nonascii(word):
 def make_lower(word):
     return word.lower()
 
-def remove_dots(word):
-    return word.replace("...", "")
-
-def replace_by_eos(word, eos):
-    word = word.replace(".", eos)
-    word = word.replace("?", eos)
-    word = word.replace("!", eos)
-    return word
-
-def clean_word(word, eos):
+def clean_word(word):
     processed = remove_nonascii(word)
     processed = make_lower(processed)
-    processed = remove_dots(processed)
-    processed = replace_by_eos(processed, eos)
     return processed
 
 class GetData:
-    def __init__(self, sequence_max_len, eos):
+    def __init__(self, sequence_max_len):
         self.sequence_max_len = sequence_max_len
-        self.eos = eos
 
     def get_data(self, input_file_path):
-        dialogue_by_jerry = []
+        sentences_by_jerry = []
         with open(input_file_path) as input_file:
             input_data = csv.DictReader(input_file)
             for row in input_data:
                 if(row['Character'] == 'JERRY'):
-                    dialogue_by_jerry.append([clean_word(word, self.eos) for word in word_tokenize(row['Dialogue'])])
+                    if(row['Character'] == 'JERRY'):
+                        for sentence in sent_tokenize(row['Dialogue']):
+                            sentence = remove_dots(sentence)
+                            sentence = remove_punctuations_digits(sentence)
+                            sentences_by_jerry.append([clean_word(word) for word in word_tokenize(sentence)])
 
             # Create a tokenizer
-            tokenizer = Tokenizer()
+            tokenizer = Tokenizer(filters=filter)
 
             # And build the word index
-            tokenizer.fit_on_texts(dialogue_by_jerry)
+            tokenizer.fit_on_texts(sentences_by_jerry)
 
             # This is how we can recover the word index that was computed
             word_index = tokenizer.word_index
@@ -53,16 +57,19 @@ class GetData:
 
             prefix_word = []
             target_word = []
-            for dialogue in dialogue_by_jerry:
-                for i in range (len(dialogue) - self.sequence_max_len):
-                    prefix_word.append(dialogue[i: i + self.sequence_max_len])
-                    target_word.append(dialogue[i + self.sequence_max_len])
-
-            print(prefix_word)
+            for sentence in sentences_by_jerry:
+                for i in range (len(sentence) - self.sequence_max_len):
+                    prefix_word.append(sentence[i: i + self.sequence_max_len])
+                    target_word.append(sentence[i + self.sequence_max_len])
 
             # This turns strings into lists of integer indices.
             prefix_sequences = tokenizer.texts_to_sequences(prefix_word)
-            target_sequences = tokenizer.texts_to_sequences(target_word)
+            target = tokenizer.texts_to_sequences(target_word)
+
+            target_sequences = []
+            for sequence in target:
+                for seq in sequence:
+                    target_sequences.append(seq)
 
             X = np.array(prefix_sequences)
             y = np.array(target_sequences)

@@ -43,14 +43,24 @@ conda create --name envAutoCompleteJerry python=3.5
 conda activate envAutoCompleteJerry
 pip install --upgrade pip
 pip install -r requirements/cpu_requirements.txt
+conda install pydot graphviz
 ```
 
 ### Download the GloVe word embeddings
 Head to https://nlp.stanford.edu/projects/glove/ and download the pre-computed embeddings from 2014 English Wikipedia. Un-zip it.
 
+```
 wget -O glove.6B.zip http://nlp.stanford.edu/data/glove.6B.zip
 unzip glove.6B.zip -d glove
 mv glove/* glove.6B
+```
+
+### Get spaCy
+
+```
+pip install spacy
+python -m spacy download en_core_web_sm
+```
 
 ### To switch Keras backend to TensorFlow
 ```
